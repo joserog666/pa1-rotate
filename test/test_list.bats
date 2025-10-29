@@ -18,31 +18,31 @@ teardown() {
 @test "list shows existing uncompressed backups" {
     run ../rotate -l test_file.txt
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "test_file.txt.1" ]]
-    [[ "$output" =~ "test_file.txt.3" ]]
-    [[ "$output" =~ "test_file.txt.5" ]]
+    [[ "$output" =~ test_file.txt.1 ]]
+    [[ "$output" =~ test_file.txt.3 ]]
+    [[ "$output" =~ test_file.txt.5 ]]
 }
 
 @test "list shows compressed backups" {
     run ../rotate -l test_file.txt
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "test_file.txt.2.gz" ]]
-    [[ "$output" =~ "test_file.txt.9.gz" ]]
+    [[ "$output" =~ test_file.txt.2.gz ]]
+    [[ "$output" =~ test_file.txt.9.gz ]]
 }
 
 @test "list shows both compressed and uncompressed" {
     run ../rotate -l test_file.txt
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "test_file.txt.1" ]]
-    [[ "$output" =~ "test_file.txt.2.gz" ]]
+    [[ "$output" =~ test_file.txt.1 ]]
+    [[ "$output" =~ test_file.txt.2.gz ]]
 }
 
 @test "list with no backups shows only original file" {
     rm -f test_file.txt.[1-9] test_file.txt.[1-9].gz
     run ../rotate -l test_file.txt
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "test_file.txt" ]]
-    ! [[ "$output" =~ "test_file.txt.1" ]]
+    [[ "$output" =~ test_file.txt ]]
+    [[ ! "$output" =~ test_file.txt.1 ]]
 }
 
 @test "list output format matches ls -l" {
@@ -56,7 +56,7 @@ teardown() {
     echo "backup15" > test_file.txt.15
     run ../rotate -l test_file.txt
     [ "$status" -eq 0 ]
-    ! [[ "$output" =~ "test_file.txt.10" ]]
-    ! [[ "$output" =~ "test_file.txt.15" ]]
+    [[ ! "$output" =~ test_file.txt.10 ]]
+    [[ ! "$output" =~ test_file.txt.15 ]]
     rm -f test_file.txt.10 test_file.txt.15
 }

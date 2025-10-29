@@ -76,12 +76,12 @@ teardown() {
     echo "backup1" > test_file.txt.1
     run dash ../rotate -l test_file.txt
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "test_file.txt" ]]
+    [[ "$output" =~ test_file.txt ]]
 }
 
 @test "bash: list works" {
     echo "backup1" > test_file.txt.1
     run bash ../rotate -l test_file.txt
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "test_file.txt" ]]
+    [[ "$output" =~ test_file.txt ]]
 }

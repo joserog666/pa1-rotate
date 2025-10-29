@@ -2,7 +2,6 @@
 
 setup() {
     echo "original content" > test_file.txt
-    TEST_TIMESTAMP=$(date -r test_file.txt +%s 2>/dev/null || stat -f %m test_file.txt)
 }
 
 teardown() {
