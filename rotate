@@ -1,0 +1,147 @@
+#!/bin/sh
+# Eduard Seiler | 20244553 | 4. Oktober 2025 22∶28∶15
+
+usage() {
+    printf "Usage: rotate [OPTIONS...] <filename>\n\n"
+    printf "  -h        Help\n"
+    printf "  -b n      Backup specified File n [0-9] times - Defaults to 5 if not provided\n"
+    printf "  -d        Delete all Backups of specified File\n"
+    printf "  -z        Compress current created backup\n"
+    printf "  -l        List Backups of specified File\n\n"
+    printf "Note: Only -b and -z can be combined. All other flags must be used alone!\n"
+}
+
+list() {
+    ls -l "$1" "$1".[1-9] "$1".[1-9].gz 2>/dev/null
+    return 0
+}
+
+delete() {
+    rm -f "$1".[1-9] "$1".[1-9].gz 2>/dev/null
+}
+
+backup() {
+    FILE="$1"
+    BACKUPS_COUNT="$2"
+    COMPRESS="$3"
+    
+    for i in $(seq $((BACKUPS_COUNT - 1)) -1 1); do
+        NEXT=$((i + 1))
+
+        rm -f "$FILE.$NEXT" "$FILE.$NEXT.gz"
+        
+        if [ -f "$FILE.$i.gz" ]; then
+            mv "$FILE.$i.gz" "$FILE.$NEXT.gz"
+        elif [ -f "$FILE.$i" ]; then
+            mv "$FILE.$i" "$FILE.$NEXT"
+        fi
+    done
+    
+    rm -f "$FILE.1" "$FILE.1.gz"
+    
+    cp -p "$FILE" "$FILE.1"
+
+    if [ "$COMPRESS" -eq 1 ]; then
+        gzip "$FILE.1"
+    fi
+}
+
+FLAG_B=0
+FLAG_D=0
+FLAG_L=0
+FLAG_Z=0
+
+FILENAME=''
+
+BACKUPS=5
+
+while getopts "b:dhlz" o; do
+    case "${o}" in
+    h)
+        usage
+        exit 0
+        ;;
+    b)
+        FLAG_B=1
+        if ! printf "%s" "$OPTARG" | grep -qE '^[1-9]$'; then
+            printf "Error: -b requires a number between 1 and 9\n" >&2
+            usage >&2
+            exit 1
+        fi
+        BACKUPS="$OPTARG"
+        ;;
+    d)
+        FLAG_D=1
+        ;;
+    l)
+        FLAG_L=1
+        ;;
+    z)
+        FLAG_Z=1
+        ;;
+    *)
+        usage >&2
+        exit 1
+        ;;
+    esac
+done
+
+FLAGS_TOTAL=$((FLAG_B + FLAG_D + FLAG_Z + FLAG_L))
+
+if [ $FLAGS_TOTAL -eq 0 ]; then
+    FLAG_B=1
+fi
+
+shift $((OPTIND - 1))
+
+FILENAME="$1"
+
+if [ $FLAGS_TOTAL -gt 2 ]; then
+    printf "Error: Too many Arguments!\n" >&2
+    usage >&2
+    exit 1
+fi
+
+if [ $FLAGS_TOTAL -eq 2 ]; then
+    if [ $FLAG_B -ne 1 ] || [ $FLAG_Z -ne 1 ]; then
+        printf "Error: Wrong Argument Combination!\n" >&2
+        usage >&2
+        exit 1
+    fi
+fi
+
+if [ $FLAGS_TOTAL -eq 1 ]; then
+    if [ $FLAG_Z -eq 1 ]; then
+        FLAG_B=1
+    fi
+fi
+
+if [ -n "$2" ]; then
+    printf "Error: Too many arguments. Only one filename allowed.\n" >&2
+    usage >&2
+    exit 1
+fi
+
+if [ -z "$FILENAME" ]; then
+    printf "Error: No filename provided.\n" >&2
+    usage >&2
+    exit 1
+fi
+
+if [ ! -f "$FILENAME" ]; then
+    printf "Error: File does not exist: %s\n" "$FILENAME" >&2
+    exit 1
+fi
+
+if [ $FLAG_B -eq 1 ]; then
+    if [ ! -s "$FILENAME" ]; then
+        exit 0
+    fi
+    backup "$FILENAME" "$BACKUPS" "$FLAG_Z"
+elif [ $FLAG_D -eq 1 ]; then
+    delete "$FILENAME"
+    exit 0
+elif [ $FLAG_L -eq 1 ]; then
+    list "$FILENAME"
+    exit 0
+fi
